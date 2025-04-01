@@ -1,3 +1,4 @@
+// Required libraries
 require("dotenv").config();
 const express = require("express");
 const fs = require("fs");
@@ -5,9 +6,11 @@ const path = require("path");
 const crypto = require("crypto");
 const bcrypt = require("bcrypt");
 
+// Express app setup
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Encryption setup and functions
 const algorithm = "aes-256-cbc";
 const key = Buffer.from(process.env.ENCRYPTION_KEY, "hex");
 if (key.length !== 32) {
@@ -17,14 +20,6 @@ if (key.length !== 32) {
   process.exit(1);
 }
 const ivLength = 16;
-
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-let snippets = [];
-let nextSnippetId = 1;
-let users = [];
-let nextUserId = 1;
 
 function encrypt(text) {
   const iv = crypto.randomBytes(ivLength);
@@ -54,6 +49,16 @@ function decrypt(text) {
     return "[Decryption Error]";
   }
 }
+
+// Body parsing middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// In-memory storage and initial data loading
+let snippets = [];
+let nextSnippetId = 1;
+let users = [];
+let nextUserId = 1;
 
 function loadSeedData() {
   try {
@@ -85,10 +90,14 @@ function loadSeedData() {
   console.log(`User store initialized. Next User ID will be ${nextUserId}.`);
 }
 
+// --- API Endpoints ---
+
+// Welcome route
 app.get("/", (req, res) => {
   res.send("Welcome to the Snippr API!");
 });
 
+// Snippet routes (Get All, Get One, Create New)
 app.get("/snippets", (req, res) => {
   const language = req.query.lang;
   let results = snippets;
@@ -146,6 +155,7 @@ app.post("/snippets", (req, res) => {
   });
 });
 
+// User creation route
 app.post("/user", async (req, res) => {
   const { email, password } = req.body;
 
@@ -188,6 +198,7 @@ app.post("/user", async (req, res) => {
   }
 });
 
+// Start the server
 app.listen(PORT, () => {
   loadSeedData();
   console.log(`Server is running on http://localhost:${PORT}`);
